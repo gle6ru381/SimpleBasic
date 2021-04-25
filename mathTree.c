@@ -139,7 +139,10 @@ struct MathReturn calcS(char* func)
                     struct MathReturn ret = calcS(&func[i]);
                     node->right = ret.node;
                     i += ret.idx;
-                    node->right->left = tmp;
+                    MathNode* left = node->right;
+                    while (left->left)
+                        left = left->left;
+                    left->left = tmp;
                 } else {
                     MathNode* tmp = node;
                     node = makeNode();
@@ -151,8 +154,11 @@ struct MathReturn calcS(char* func)
         } else if (func[i] == '(') {
             //MathNode* tmp = node->right;
             struct MathReturn ret = calcS(&func[i + 1]);
-            node->right = ret.node;
-            i += ret.idx;
+            if (node->operation == NULL)
+                node->left = ret.node;
+            else
+                node->right = ret.node;
+            i += ret.idx + 1;
             //node->right->left = tmp;
         }
     }
