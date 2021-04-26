@@ -39,12 +39,12 @@ int isOperationBigger(char o1, char o2) {
 
 static char getAccum(char v1, char v2)
 {
-    char accum = '\0';
+    char accum = -1;
     if (variableInAccum(v1))
         accum = v1;
-    if (variableInAccum(v2))
+    else if (variableInAccum(v2))
         accum = v2;
-    if (accum == '\0') {
+    if (accum == -1) {
         moveAccum(v1);
         accum = v1;
     }
@@ -58,6 +58,10 @@ static char mulFunc(char lval, char rval)
         addInstructionv("MUL", rval);
     else
         addInstructionv("MUL", lval);
+    if (isTempVar(lval)) {
+        popTempVar();
+        popTempVar();
+    }
     return accum;
 }
 
@@ -68,6 +72,10 @@ static char sumFunc(char lval, char rval)
         addInstructionv("ADD", rval);
     else
         addInstructionv("ADD", lval);
+    if (isTempVar(lval)) {
+        popTempVar();
+        popTempVar();
+    }
     return accum;
 }
 
@@ -78,6 +86,10 @@ static char subFunc(char lval, char rval)
         addInstructionv("SUB", rval);
     else
         addInstructionv("SUB", lval);
+    if (isTempVar(lval)) {
+        popTempVar();
+        popTempVar();
+    }
     return accum;
 }
 
@@ -88,6 +100,10 @@ static char divideFunc(char lval, char rval)
         addInstructionv("DIVIDE", rval);
     else
         addInstructionv("DIVIDE", lval);
+    if (isTempVar(lval)) {
+        popTempVar();
+        popTempVar();
+    }
     return accum;
 }
 
@@ -177,6 +193,7 @@ MathNode* createTree(char* func)
 char eval(MathNode* root)
 {
     char lVal, rVal;
+    char lValTmp = -1;
     if (root->left->operation == NULL) {
         lVal = root->left->data;
     } else {
@@ -185,7 +202,18 @@ char eval(MathNode* root)
     if (root->right->operation == NULL) {
         rVal = root->right->data;
     } else {
+        if (root->left->operation != NULL) {
+            lValTmp = pushTempVar();
+            storeAccum(lValTmp);
+        }
         rVal = eval(root->right);
+    }
+    if (lValTmp != -1) {
+        int tmp = pushTempVar();
+        storeAccum(tmp);
+        moveAccum(lValTmp);
+        rVal = tmp;
+        lVal = lValTmp;
     }
     return root->operation(lVal, rVal);
 }

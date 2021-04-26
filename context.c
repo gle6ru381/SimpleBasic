@@ -58,6 +58,7 @@ typedef struct _Context {
     uint8_t instrListCapacity;
     uint8_t instrucionStack;
     uint8_t variableStack;
+    char tempVarName;
 } Context;
 
 static Context* context;
@@ -73,6 +74,7 @@ void initContext()
     context->instrListSize = 0;
     context->varListCapacity = 0;
     context->instrListCapacity = 0;
+    context->tempVarName = 0;
 
     currentLine = -1;
 }
@@ -93,9 +95,7 @@ static Variable* findVar(char varName, char storeAccum)
 
     for (uint8_t i = 0; i < context->varListSize; i++) {
         if (storeAccum) {
-            if (context->variables[i]->isAccum) {
-                context->variables[i]->isAccum = 0;
-            }
+            context->variables[i]->isAccum = 0;
         }
         if (context->variables[i]->varName == varName) {
             return context->variables[i];
@@ -228,20 +228,18 @@ void moveAccum(char varName)
     var->isAccum = 1;
 }
 
-void storeAccum()
+void storeAccum(char varName)
 {
-    for (int8_t i = 0; i < context->varListSize; i++) {
-        Variable* var = context->variables[i];
-        if (var->isAccum) {
-            addInstructiono("STORE", var->location);
-            return;
-        }
-    }
+    Variable* var = findVar(varName, 1);
+    addInstructiono("STORE", var->location);
 }
 
 int variableInAccum(char varName)
 {
-    return findVar(varName, 0)->isAccum;
+    Variable* var = findVar(varName, 0);
+    if (var == NULL)
+        return 1;
+    return var->isAccum;
 }
 
 int8_t lastInstructionLocation()
@@ -267,4 +265,26 @@ void writeInstruction(FILE* fd)
         }
         fputc('\n', fd);
     }
+}
+
+int pushTempVar()
+{
+    addVariable(context->tempVarName);
+    return context->tempVarName++;
+}
+
+void popTempVar()
+{
+    context->tempVarName--;
+    free(context->variables[--context->varListSize]);
+    context->variableStack++;
+}
+
+int isTempVar(int varName)
+{
+    Variable* var = findVar(varName, 0);
+    if (var->varName < 'A')
+        return 1;
+    else
+        return 0;
 }
