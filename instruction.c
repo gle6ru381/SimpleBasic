@@ -37,6 +37,10 @@ int invokeInstr(char* instr, char* operand)
         return genIfIns(operand);
     } else if (!strcmp(instr, "GOTO")) {
         return genGotoIns(operand);
+    } else if (!strcmp(instr, "END")) {
+        return genHaltIns();
+    } else if (!strcmp(instr, "REM")) {
+        return 0;
     }
     return -1;
 }
@@ -113,7 +117,7 @@ int genIfIns(char* ins)
             continue;
         switch (ins[i]) {
         case '!': {
-            if (ins[i + 1] == '=')
+            if (ins[++i] == '=')
                 flag = 1;
             else
                 return -3;
@@ -121,6 +125,15 @@ int genIfIns(char* ins)
         }
         case '<':
             flag = 2;
+            break;
+        case '>':
+            flag = 3;
+            break;
+        case '=':
+            if (ins[++i] == '=')
+                flag = 4;
+            else
+                return -3;
             break;
         }
     }
@@ -145,16 +158,38 @@ int genIfIns(char* ins)
     }
 
     char rVal = evals(buff);
-    if (!variableInAccum(rVal)) {
-        moveAccum(rVal);
-    }
     if (flag == 1) {
+        if (!variableInAccum(rVal)) {
+            moveAccum(rVal);
+        }
         addInstructionv("SUB", lVal);
-        addInstructionj("JZ");
+        addInstructionj("JZ", 2);
         invokeInstr(insIf, &ins[i]);
     } else if (flag == 2) {
+        if (!variableInAccum(rVal)) {
+            moveAccum(rVal);
+        }
         addInstructionv("SUB", lVal);
-        addInstructionj("JNEG");
+        addInstructionj("JNEG", 2);
+        invokeInstr(insIf, &ins[i]);
+    } else if (flag == 3) {
+        if (!variableInAccum(lVal)) {
+            moveAccum(lVal);
+        }
+        addInstructionv("SUB", rVal);
+        addInstructionj("JNEG", 2);
+        invokeInstr(insIf, &ins[i]);
+    } else if (flag == 4) {
+        if (!variableInAccum(rVal)) {
+            moveAccum(rVal);
+        }
+        addInstructionv("SUB", lVal);
+        addInstructionj("JNEG", 5);
+        if (!variableInAccum(lVal)) {
+            moveAccum(lVal);
+        }
+        addInstructionv("SUB", rVal);
+        addInstructionj("JNEG", 2);
         invokeInstr(insIf, &ins[i]);
     }
     return 0;
@@ -180,4 +215,10 @@ int genGotoIns(char* inst)
         return -2;
     addInstructiono("JUMP", location);
     return 0;
+}
+
+int genHaltIns()
+{
+    addInstructionEnd();
+    return -10;
 }

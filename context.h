@@ -15,9 +15,11 @@ int variableInAccum(char varName);
 int setVariable(char* varName, uint16_t value);
 void addInstructionv(char* instruction, char varName);
 void addInstructiono(char* instruction, int8_t operand);
-void addInstructionj(char* instruction);
+void addInstructionj(char* instruction, int offset);
+void addInstructionEnd();
 int setCurrentLine(int16_t line);
 void moveAccum(char varName);
+void storeAccum();
 void writeInstruction(FILE* fd);
 
 #endif // CONTEXT_H

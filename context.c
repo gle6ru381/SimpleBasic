@@ -86,12 +86,17 @@ int setCurrentLine(int16_t line)
     return 0;
 }
 
-static Variable* findVar(char varName)
+static Variable* findVar(char varName, char storeAccum)
 {
 //    if (context->variables == NULL)
 //        return NULL;
 
     for (uint8_t i = 0; i < context->varListSize; i++) {
+        if (storeAccum) {
+            if (context->variables[i]->isAccum) {
+                context->variables[i]->isAccum = 0;
+            }
+        }
         if (context->variables[i]->varName == varName) {
             return context->variables[i];
         }
@@ -110,7 +115,7 @@ int addVariable(char varName)
                                      sizeof(Variable) * (context->varListSize + 10));
         context->varListCapacity += 10;
     }
-    if (findVar(varName) == NULL) {
+    if (findVar(varName, 0) == NULL) {
         if (context->variableStack == context->instrucionStack)
             return -2;
         context->variables[context->varListSize++] = newVar2(varName, context->variableStack--);
@@ -129,7 +134,7 @@ int addVariable(char varName)
 
 int8_t getVariableLocation(char varName)
 {
-    Variable* var = findVar(varName);
+    Variable* var = findVar(varName, 0);
     if (var == NULL)
         return UNKNOWN_LOCATION;
     return var->location;
@@ -137,7 +142,7 @@ int8_t getVariableLocation(char varName)
 
 void addInstructionv(char* instruction, char varName)
 {
-    Variable* var = findVar(varName);
+    Variable* var = findVar(varName, 0);
     addInstructiono(instruction, var->location);
 //    String* instStr = newString1(instruction);
 //    char addrStr[4];
@@ -188,21 +193,55 @@ void addInstructiono(char* instruction, int8_t operand)
     context->instructions[context->instrListSize++] = newInstruction(instStr, addr);
 }
 
-void addInstructionj(char* instruction)
+void addInstructionj(char* instruction, int offset)
 {
-    addInstructiono(instruction, context->instrucionStack + 2);
+    addInstructiono(instruction, context->instrucionStack + offset);
+}
+
+void addInstructionEnd()
+{
+    uint8_t addr = context->instrucionStack;
+    char addrStr[4];
+    addrStr[0] = (addr / 10) + '0';
+    addrStr[1] = (addr % 10) + '0';
+    addrStr[2] = ' ';
+    addrStr[3] = '\0';
+    String* instStr = newString1(addrStr);
+    instStr = strAppendc(instStr, "HALT");
+
+    if (context->instructions == NULL) {
+        context->instructions = malloc(sizeof(Instruction) * 10);
+        context->instrListCapacity = 10;
+    }
+    if (context->instrListSize == context->instrListCapacity) {
+        context->instructions = realloc(context->instructions,
+                                        sizeof(Instruction) * (context->instrListSize + 10));
+        context->instrListCapacity += 10;
+    }
+    context->instructions[context->instrListSize++] = newInstruction(instStr, addr);
 }
 
 void moveAccum(char varName)
 {
-    Variable* var = findVar(varName);
+    Variable* var = findVar(varName, 1);
     addInstructiono("LOAD", var->location);
     var->isAccum = 1;
 }
 
+void storeAccum()
+{
+    for (int8_t i = 0; i < context->varListSize; i++) {
+        Variable* var = context->variables[i];
+        if (var->isAccum) {
+            addInstructiono("STORE", var->location);
+            return;
+        }
+    }
+}
+
 int variableInAccum(char varName)
 {
-    return findVar(varName)->isAccum;
+    return findVar(varName, 0)->isAccum;
 }
 
 int8_t lastInstructionLocation()

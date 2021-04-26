@@ -8,6 +8,7 @@ int genPrintIns(char* instr);
 int genLetIns(char* instr);
 int genIfIns(char* instr);
 int genGotoIns(char* instr);
+int genHaltIns();
 
 int invokeInstr(char* instr, char* operand);
 
