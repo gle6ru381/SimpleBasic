@@ -92,7 +92,7 @@ int genLetIns(char* ins)
         moveAccum(rVal);
     }
     addVariable(lVal);
-    addInstructionv("STORE", lVal);
+    storeAccum(lVal);
     return 0;
 }
 
@@ -104,7 +104,20 @@ int genIfIns(char* ins)
     for (i = 0; i < strLen; i++) {
         if (ins[i] == ' ')
             continue;
-        if (isupper(ins[i])) {
+        if (isdigit(ins[i])) {
+            char buff[8];
+            uint8_t nIdx = 0;
+            for (; i < strLen; i++) {
+                if (isdigit(ins[i]))
+                    buff[nIdx++] = ins[i];
+                else
+                    break;
+            }
+            buff[nIdx] = '\0';
+            int16_t val = atoi(buff);
+            lVal = getLiteralName(val);
+            break;
+        } else if (isupper(ins[i])) {
             lVal = ins[i];
             break;
         } else if (ins[i] == '='){
@@ -212,13 +225,14 @@ int genGotoIns(char* inst)
     uint8_t line = atoi(lineNum);
     int8_t location = instructionLocationByLine(line);
     if (location == UNKNOWN_LOCATION)
-        return -2;
-    addInstructiono("JUMP", location);
+        addInstructionp("JUMP", line);
+    else
+        addInstructiono("JUMP", location);
     return 0;
 }
 
 int genHaltIns()
 {
     addInstructionEnd();
-    return -10;
+    return 0;
 }

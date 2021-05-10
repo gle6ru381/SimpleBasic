@@ -4,6 +4,7 @@
 #include <ctype.h>
 #include "context.h"
 #include "instruction.h"
+#include <string.h>
 
 int readLine(FILE* fd, char* buff)
 {
@@ -45,6 +46,34 @@ int main(int argc, char** argv)
         int strLen = readLine(in, buff);
         if (strLen == 0)
             continue;
+        int i = 3, j = 0;
+        char instr[10];
+        int8_t flag = 0;
+        for (; i < strLen; i++) {
+            if (buff[i] == ' ') {
+                if (flag)
+                    break;
+                else
+                    continue;
+            }
+            if (isupper(buff[i])) {
+                flag = 1;
+                instr[j++] = buff[i];
+            } else {
+                fprintf(stderr, "Некорректная инструкция\n");
+                return -4;
+            }
+            instr[j] = '\0';
+            if (!strcmp("LET", instr) || !strcmp("IF", instr)) {
+                findLiterals(&buff[i + j]);
+            }
+        }
+    }
+    fseek(in, 0, SEEK_SET);
+    while (!feof(in)) {
+        int strLen = readLine(in, buff);
+        if (strLen == 0)
+            continue;
         char lineNumber[3] = {buff[0], buff[1], '\0'};
         int16_t line = atoi(lineNumber);
         setCurrentLine(line);
@@ -67,7 +96,11 @@ int main(int argc, char** argv)
             }
         }
         instr[j] = '\0';
-        invokeInstr(instr, buff + i + 1);
+        int retVal = invokeInstr(instr, buff + i + 1);
+        if (retVal) {
+            fprintf(stderr, "Некорректный операнд на строке %d\n", (int)line);
+            return -5;
+        }
     }
     writeInstruction(out);
     return 0;

@@ -18,11 +18,15 @@ void popTempVar();
 int isTempVar(int varName);
 void addInstructionv(char* instruction, char varName);
 void addInstructiono(char* instruction, int8_t operand);
+void addInstructionp(char* instruction, uint8_t line);
 void addInstructionj(char* instruction, int offset);
 void addInstructionEnd();
 int setCurrentLine(int16_t line);
 void moveAccum(char varName);
 void storeAccum(char varName);
 void writeInstruction(FILE* fd);
+void findLiterals(char* str);
+int8_t getLiteralLocation(int16_t val);
+char getLiteralName(int16_t val);
 
 #endif // CONTEXT_H

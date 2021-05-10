@@ -6,6 +6,7 @@ typedef char (*MathFunc)(char,char);
 
 typedef struct _MathNode {
     char data;
+    int8_t literalLocation;
     struct _MathNode* left;
     struct _MathNode* right;
     MathFunc operation;

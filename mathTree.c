@@ -10,6 +10,7 @@ MathNode* makeNode()
     node->right = NULL;
     node->operation = NULL;
     node->data = -1;
+    node->literalLocation = -1;
     return node;
 }
 
@@ -130,6 +131,8 @@ struct MathReturn {
     MathNode* node;
 };
 
+#include <stdlib.h>
+
 struct MathReturn calcS(char* func)
 {
     MathNode* node = makeNode();
@@ -137,13 +140,39 @@ struct MathReturn calcS(char* func)
     for (i = 0; func[i] != ')' && func[i] != '\0'; i++) {
         if (func[i] == ' ')
             continue;
-        if (isupper(func[i])) {
+        if (isupper(func[i]) || isdigit(func[i])) {
             if (node->operation == NULL) {
                 node->left = makeNode();
-                node->left->data = func[i];
+                if (isdigit(func[i])) {
+                    char buff[8];
+                    uint8_t nIdx = 0;
+                    for (; func[i] != ' ' && func[i] != '\0' && func[i] != ')'; i++) {
+                        buff[nIdx++] = func[i];
+                    }
+                    buff[nIdx] = '\0';
+                    int16_t val = atoi(buff);
+                    int8_t location = getLiteralLocation(val);
+                    node->left->literalLocation = location;
+                    node->left->data = getLiteralName(val);
+                    i--;
+                } else
+                    node->left->data = func[i];
             } else {
                 node->right = makeNode();
-                node->right->data = func[i];
+                if (isdigit(func[i])) {
+                    char buff[8];
+                    uint8_t nIdx = 0;
+                    for (; func[i] != ' ' && func[i] != '\0' && func[i] != ')'; i++) {
+                        buff[nIdx++] = func[i];
+                    }
+                    buff[nIdx] = '\0';
+                    int16_t val = atoi(buff);
+                    int8_t location = getLiteralLocation(val);
+                    node->right->literalLocation = location;
+                    node->right->data = getLiteralName(val);
+                    i--;
+                } else
+                    node->right->data = func[i];
             }
         } else if (isOperation(func[i])) {
             if (node->operation == NULL) {
